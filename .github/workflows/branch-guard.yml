@@ -1,0 +1,24 @@
+name: branch-guard
+on:
+  pull_request:
+    branches: [dev, test, main, master]
+permissions:
+  contents: read
+jobs:
+  branch-guard:
+    name: branch-guard
+    runs-on: ubuntu-latest
+    steps:
+      - name: Enforce promotion source branch
+        env:
+          BASE: ${{ github.base_ref }}
+          HEAD: ${{ github.head_ref }}
+        run: |
+          set -euo pipefail
+          echo "PR: $HEAD -> $BASE"
+          case "$BASE" in
+            main|master) [ "$HEAD" = "test" ] || { echo "::error::$BASE only accepts PRs from 'test' (got '$HEAD')"; exit 1; } ;;
+            test)        [ "$HEAD" = "dev" ]  || { echo "::error::test only accepts PRs from 'dev' (got '$HEAD')"; exit 1; } ;;
+            dev)         case "$HEAD" in feature/*|bugfix/*|hotfix/*) : ;; *) echo "::error::dev only accepts feature/bugfix/hotfix (got '$HEAD')"; exit 1 ;; esac ;;
+          esac
+          echo "promotion source OK"
