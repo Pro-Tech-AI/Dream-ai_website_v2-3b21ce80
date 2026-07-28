@@ -91,7 +91,7 @@ jobs:
           note ""
           note "**Summary: $PASS passed · $FAIL failed · $SKIP not configured**"
           echo "fails=$FAIL" >> "$GITHUB_OUTPUT"
-          cat test-report/report.md >> "$GITHUB_STEP_SUMMARY"
+          cat test-report/report.md >> "$GITHUB_STEP_SUMMARY" 2>/dev/null || true
           [ "$FAIL" -eq 0 ]
 
       - name: Upload test report
@@ -126,7 +126,8 @@ jobs:
       - name: Security summary
         if: always()
         run: |
-          { echo "## Security gates"; echo '```'; cat sec-report/summary.txt 2>/dev/null; tail -20 sec-report/audit.txt 2>/dev/null; echo '```'; } >> "$GITHUB_STEP_SUMMARY"
+          # never let summary-writing fail the gate (runner uses bash -e)
+          { echo "## Security gates"; echo '```'; cat sec-report/summary.txt 2>/dev/null || echo "(no summary)"; tail -20 sec-report/audit.txt 2>/dev/null || true; echo '```'; } >> "$GITHUB_STEP_SUMMARY" || true
       - name: Upload security report
         if: always()
         uses: actions/upload-artifact@v4
