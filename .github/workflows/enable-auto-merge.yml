@@ -1,0 +1,22 @@
+# feature/* -> dev merges itself once every required check is green.
+# dev requires 0 approvals by policy, so nothing waits on a human.
+name: enable-auto-merge
+on:
+  pull_request_target:
+    types: [opened, reopened, ready_for_review, synchronize]
+    branches: [dev]
+permissions:
+  contents: write
+  pull-requests: write
+jobs:
+  auto:
+    if: github.event.pull_request.draft == false
+    runs-on: ubuntu-latest
+    steps:
+      - name: Turn on auto-merge (squash)
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh pr merge --auto --squash "${{ github.event.pull_request.number }}" \
+            --repo "${{ github.repository }}" || {
+              echo "::warning::could not enable auto-merge (token perms or repo setting)"; exit 0; }
